@@ -116,6 +116,14 @@
 }
 
 @layer base {
+  :root {
+    /* Hyrox Brand Colors */
+    --volt-yellow: 210 255 0;     /* #D2FF00 */
+    --pure-black: 0 0 0;           /* #000000 */
+    --dark-grey: 26 26 26;         /* #1A1A1A */
+    --light-grey: 161 161 170;     /* #A1A1AA */
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
