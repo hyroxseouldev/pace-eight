@@ -64,7 +64,7 @@ export const programs = pgTable("programs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// [Workouts] 날짜별 상세 운동 루틴 (유연한 구조)
+// [Workouts] 날짜별 상세 운동 루틴 (Day 정보만 담당)
 export const workouts = pgTable("workouts", {
   id: uuid("id").primaryKey().defaultRandom(),
   programId: uuid("program_id")
@@ -77,8 +77,18 @@ export const workouts = pgTable("workouts", {
   dayOfWeek: integer("day_of_week"), // Weekly용: 0(일) ~ 6(토)
 
   title: text("title").notNull(),
-  description: text("description"), // 마크다운 형식 권장
-  videoUrl: text("video_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// [WorkoutSessions] Day 안의 개별 세션 (Warm-up, Main, Cool-down 등)
+export const workoutSessions = pgTable("workout_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workoutId: uuid("workout_id")
+    .references(() => workouts.id, { onDelete: "cascade" })
+    .notNull(),
+  title: text("title").notNull(), // 예: "Warm-up", "Strength Training"
+  content: text("content"), // 위지윅 에디터 HTML 저장
+  orderIndex: integer("order_index").default(0).notNull(), // 정렬 순서
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -125,12 +135,23 @@ export const programsRelations = relations(programs, ({ one, many }) => ({
   workouts: many(workouts),
 }));
 
-export const workoutsRelations = relations(workouts, ({ one }) => ({
+export const workoutsRelations = relations(workouts, ({ one, many }) => ({
   program: one(programs, {
     fields: [workouts.programId],
     references: [programs.id],
   }),
+  sessions: many(workoutSessions),
 }));
+
+export const workoutSessionsRelations = relations(
+  workoutSessions,
+  ({ one }) => ({
+    workout: one(workouts, {
+      fields: [workoutSessions.workoutId],
+      references: [workouts.id],
+    }),
+  })
+);
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   user: one(profiles, {

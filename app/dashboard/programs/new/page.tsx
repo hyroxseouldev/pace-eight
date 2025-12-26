@@ -7,14 +7,15 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { createProgram } from "../../actions";
 
 export default function NewProgramPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [description, setDescription] = useState("");
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true);
@@ -77,14 +78,17 @@ export default function NewProgramPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">설명</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="프로그램에 대한 소개를 작성해주세요"
-                    rows={4}
-                    disabled={isLoading}
+                  <Label htmlFor="description">프로그램 상세 설명</Label>
+                  <RichTextEditor
+                    content={description}
+                    onChange={setDescription}
+                    placeholder="프로그램의 목표, 대상, 준비물 등을 자유롭게 작성해주세요. 이미지와 영상도 추가할 수 있습니다."
+                    editable={!isLoading}
                   />
+                  <input type="hidden" name="description" value={description} />
+                  <p className="text-xs text-muted-foreground">
+                    💡 YouTube 영상과 이미지를 추가하여 더 풍부한 설명을 제공하세요.
+                  </p>
                 </div>
 
                 <div className="space-y-2">

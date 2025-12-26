@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { programs, workouts, subscriptions, profiles } from "@/lib/db/schema";
+import { programs, workouts, workoutSessions, subscriptions, profiles } from "@/lib/db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 
 // ==================== 프로그램 관련 Actions ====================
@@ -159,12 +159,10 @@ export async function createWorkout(programId: string, formData: FormData) {
   }
 
   const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const videoUrl = formData.get("videoUrl") as string;
   const dayNumber = parseInt(formData.get("dayNumber") as string);
 
   if (!title.trim()) {
-    return { error: "운동 제목을 입력해주세요." };
+    return { error: "Day 제목을 입력해주세요." };
   }
 
   // 프로그램 소유권 확인
@@ -182,8 +180,6 @@ export async function createWorkout(programId: string, formData: FormData) {
       .values({
         programId,
         title: title.trim(),
-        description: description?.trim() || null,
-        videoUrl: videoUrl?.trim() || null,
         dayNumber: dayNumber || null,
       })
       .returning();
@@ -284,6 +280,154 @@ export async function deleteWorkout(workoutId: string) {
   }
 }
 
+// ==================== 워크아웃 세션 관련 Actions ====================
+
+export async function createWorkoutSession(workoutId: string, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+
+  if (!title.trim()) {
+    return { error: "세션 제목을 입력해주세요." };
+  }
+
+  try {
+    // 워크아웃 조회 및 프로그램 소유권 확인
+    const workout = await db.query.workouts.findFirst({
+      where: eq(workouts.id, workoutId),
+      with: {
+        program: true,
+        sessions: true,
+      },
+    });
+
+    if (!workout || workout.program.coachId !== user.id) {
+      return { error: "워크아웃을 찾을 수 없습니다." };
+    }
+
+    // 다음 orderIndex 계산
+    const maxOrderIndex = workout.sessions.length > 0
+      ? Math.max(...workout.sessions.map(s => s.orderIndex))
+      : -1;
+
+    const [newSession] = await db
+      .insert(workoutSessions)
+      .values({
+        workoutId,
+        title: title.trim(),
+        content: content?.trim() || null,
+        orderIndex: maxOrderIndex + 1,
+      })
+      .returning();
+
+    revalidatePath(`/dashboard/programs/${workout.programId}`);
+
+    return { success: true, sessionId: newSession.id };
+  } catch (error) {
+    console.error("세션 생성 오류:", error);
+    return { error: "세션 생성에 실패했습니다." };
+  }
+}
+
+export async function updateWorkoutSession(sessionId: string, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+
+  if (!title.trim()) {
+    return { error: "세션 제목을 입력해주세요." };
+  }
+
+  try {
+    // 세션 조회 및 프로그램 소유권 확인
+    const session = await db.query.workoutSessions.findFirst({
+      where: eq(workoutSessions.id, sessionId),
+      with: {
+        workout: {
+          with: {
+            program: true,
+          },
+        },
+      },
+    });
+
+    if (!session || session.workout.program.coachId !== user.id) {
+      return { error: "세션을 찾을 수 없습니다." };
+    }
+
+    await db
+      .update(workoutSessions)
+      .set({
+        title: title.trim(),
+        content: content?.trim() || null,
+      })
+      .where(eq(workoutSessions.id, sessionId));
+
+    revalidatePath(`/dashboard/programs/${session.workout.programId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("세션 업데이트 오류:", error);
+    return { error: "세션 업데이트에 실패했습니다." };
+  }
+}
+
+export async function deleteWorkoutSession(sessionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  try {
+    // 세션 조회 및 프로그램 소유권 확인
+    const session = await db.query.workoutSessions.findFirst({
+      where: eq(workoutSessions.id, sessionId),
+      with: {
+        workout: {
+          with: {
+            program: true,
+          },
+        },
+      },
+    });
+
+    if (!session || session.workout.program.coachId !== user.id) {
+      return { error: "세션을 찾을 수 없습니다." };
+    }
+
+    const programId = session.workout.programId;
+
+    await db.delete(workoutSessions).where(eq(workoutSessions.id, sessionId));
+
+    revalidatePath(`/dashboard/programs/${programId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("세션 삭제 오류:", error);
+    return { error: "세션 삭제에 실패했습니다." };
+  }
+}
+
 // ==================== 데이터 조회 함수 ====================
 
 export async function getCoachPrograms() {
@@ -320,6 +464,11 @@ export async function getProgramById(programId: string) {
     with: {
       workouts: {
         orderBy: [workouts.dayNumber],
+        with: {
+          sessions: {
+            orderBy: [workoutSessions.orderIndex],
+          },
+        },
       },
     },
   });
