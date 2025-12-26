@@ -172,6 +172,7 @@ export function RichTextEditor({
   className,
 }: RichTextEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false, // SSR hydration mismatch 방지
     extensions: [
       StarterKit,
       Link.configure({
