@@ -37,6 +37,16 @@ export const profiles = pgTable("profiles", {
   avatarUrl: text("avatar_url"),
   role: userRoleEnum("role").default("subscriber").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+
+  // 코치 프로필 추가 필드
+  displayName: text("display_name"), // 활동명/별명
+  coachingExperience: text("coaching_experience"), // 코칭 경력
+  certifications: text("certifications"), // 자격증
+  bioShort: text("bio_short"), // 한 줄 소개
+  bioLong: text("bio_long"), // 상세 소개
+  snsUrl: text("sns_url"), // SNS/웹사이트
+  contact: text("contact"), // 연락처
+  onboardingCompleted: boolean("onboarding_completed").default(false).notNull(), // 온보딩 완료 여부
 });
 
 // [Programs] 코치가 만든 프로그램 (판매 단위)

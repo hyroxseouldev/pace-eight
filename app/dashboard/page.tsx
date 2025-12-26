@@ -1,5 +1,10 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Package, Users, TrendingUp, Plus, ChevronRight } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import { db } from "@/lib/db";
+import { profiles } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +12,24 @@ import { Badge } from "@/components/ui/badge";
 import { getCoachPrograms, getCoachStats } from "./actions";
 
 export default async function DashboardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // 온보딩 완료 여부 확인
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, user.id),
+  });
+
+  if (!profile?.onboardingCompleted) {
+    redirect("/onboarding");
+  }
+
   const [programs, stats] = await Promise.all([
     getCoachPrograms(),
     getCoachStats(),
@@ -154,4 +177,3 @@ export default async function DashboardPage() {
     </>
   );
 }
-
