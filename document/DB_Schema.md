@@ -1,3 +1,6 @@
+3일 안에 개발을 완료하기 위해 가장 효율적이고 확장성 있는 **Drizzle ORM 스키마**를 설계했습니다. Supabase Auth와 연동을 고려하여 `profiles` 테이블을 구성하고, 하이록스 프로그램의 핵심인 '날짜별 운동'과 '구독 상태'를 관리하는 구조입니다.
+
+```jsx
 import {
   pgTable,
   uuid,
@@ -132,3 +135,31 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
     references: [programs.id],
   }),
 }));
+```
+
+---
+
+### 💡 스키마 설계 포인트 (3일 완성 전략)
+
+1. **Supabase Auth 통합**: `profiles.id`를 `uuid`로 설정하여 Supabase의 `auth.users` 테이블과 연동하기 쉽게 만들었습니다. 사용자가 가입하면 DB 트리거 등을 통해 `profiles`에 바로 데이터를 넣어주면 됩니다.
+2. **`dayNumber` 중심 스케줄링**: 날짜(Date)를 고정하지 않고 **Day 1, Day 2...** 형식을 사용했습니다. 그래야 유저가 구독을 시작한 시점부터 1일 차 운동을 순차적으로 보여주기 쉽습니다.
+3. **한국형 결제(정기 결제) 대비**: `subscriptions` 테이블에 `billing_key` 필드를 두어 포트원에서 발급받은 정기 결제 키를 저장할 수 있게 했습니다. `current_period_end`를 통해 구독 만료일만 체크하면 서비스 접근 권한 제어가 가능합니다.
+4. **확장성**: `workout_logs`를 통해 유저가 자신의 기록(무게, 시간 등)을 남길 수 있게 하여, 추후에 코치가 피드백을 주는 기능을 추가하기 용이합니다.
+
+### 🚀 다음 추천 단계
+
+이제 이 스키마를 기반으로 **Supabase 프로젝트에 테이블을 생성**하고, `npx drizzle-kit push`를 실행하여 DB를 동기화하세요.
+
+혹시 코치가 운동 정보를 입력할 때 사용할 **"Day별 운동 입력 UI" (Shadcn UI 기반)** 구성 코드가 필요하신가요?
+
+### 📋 스키마 핵심 요약
+
+1. **유연한 워크아웃 설계**: `workouts` 테이블 하나에서 `dayNumber`, `scheduledDate`, `dayOfWeek`를 모두 가지고 있습니다. **지금은 `dayNumber`만 사용**해서 코딩하고, 나중에 `type`에 따라 로직만 추가하면 됩니다.
+2. **포트원(Portone) 최적화**: `subscriptions` 테이블에 `billingKey`와 `currentPeriodEnd`를 미리 넣어두었습니다. 한국형 구독 SaaS 연동 시 빌링키 저장 공간이 반드시 필요합니다.
+3. **Supabase Auth 연동**: `profiles` 테이블의 `id`를 `uuid`로 설정하여, Supabase Auth 가입 시 생성되는 `user_id`를 그대로 외래키로 사용할 수 있게 했습니다.
+4. **기록(Logging) 기능**: `workoutLogs`를 통해 하이록스 선수들이 자신의 기록을 아카이브할 수 있는 기반을 마련했습니다.
+
+### 🛠 다음 단계 (Day 1 작업 추천)
+
+1. 이 코드를 프로젝트에 넣고 `npx drizzle-kit generate:pg` 및 `npx drizzle-kit push:pg`로 DB에 적용하세요.
+2. Supabase 대시보드에서 `auth.users`에 유저가 생성될 때 `public.profiles` 테이블에도 행이 자동으로 추가되도록 **Database Trigger**를 설정하면 매우 편해집니다. (필요하시면 이 SQL 쿼리도 짜드릴 수 있습니다.)
