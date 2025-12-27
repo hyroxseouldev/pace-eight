@@ -57,9 +57,17 @@ export const programs = pgTable("programs", {
     .notNull(),
   title: text("title").notNull(),
   description: text("description"),
-  type: programTypeEnum("type").default("relative").notNull(), // 운영 방식
-  price: integer("price").notNull(), // 원 단위 가격
+  type: programTypeEnum("type").default("relative").notNull(),
+  price: integer("price").notNull(),
   thumbnailUrl: text("thumbnail_url"),
+
+  // MVP용 메타데이터: 필터링 및 상세 정보 표시용
+  difficulty: integer("difficulty").default(3), // 1~5점 척도
+  trainingTime: integer("training_time"), // 분 단위 (예: 120)
+  daysPerWeek: integer("days_per_week"), // 주당 일수 (예: 6)
+  sessionsPerDay: integer("sessions_per_day").default(1), // 하루 세션 수
+  cycleInfo: text("cycle_info"), // "8-10주" 등 자유로운 텍스트 정보
+
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

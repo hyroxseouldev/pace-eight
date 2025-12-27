@@ -32,6 +32,11 @@ interface ProgramOverviewTabProps {
     description: string | null;
     price: number;
     thumbnailUrl: string | null;
+    difficulty: number | null;
+    trainingTime: number | null;
+    daysPerWeek: number | null;
+    sessionsPerDay: number | null;
+    cycleInfo: string | null;
     isActive: boolean;
     createdAt: Date;
   };
@@ -199,6 +204,96 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
                 placeholder="https://example.com/image.jpg"
                 disabled={isUpdating}
               />
+            </div>
+
+            {/* 메타데이터 섹션 */}
+            <div className="space-y-4 border-t pt-6">
+              <div>
+                <h3 className="text-sm font-medium mb-3">프로그램 상세 정보</h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  프로그램의 세부 정보를 입력하세요. 이 정보는 필터링 및 상세 페이지에 표시됩니다.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">난이도 (1-5)</Label>
+                  <Input
+                    id="difficulty"
+                    name="difficulty"
+                    type="number"
+                    min="1"
+                    max="5"
+                    defaultValue={program.difficulty ?? 3}
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    1: 매우 쉬움 ~ 5: 매우 어려움
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="trainingTime">훈련 시간 (분)</Label>
+                  <Input
+                    id="trainingTime"
+                    name="trainingTime"
+                    type="number"
+                    min="0"
+                    defaultValue={program.trainingTime ?? ""}
+                    placeholder="60"
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    1회 운동 시간 (예: 120분)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="daysPerWeek">주당 운동 일수</Label>
+                  <Input
+                    id="daysPerWeek"
+                    name="daysPerWeek"
+                    type="number"
+                    min="1"
+                    max="7"
+                    defaultValue={program.daysPerWeek ?? ""}
+                    placeholder="6"
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    일주일 중 운동하는 날 (예: 6일)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sessionsPerDay">하루 세션 수</Label>
+                  <Input
+                    id="sessionsPerDay"
+                    name="sessionsPerDay"
+                    type="number"
+                    min="1"
+                    defaultValue={program.sessionsPerDay ?? 1}
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    하루에 몇 번 운동하는지 (기본값: 1)
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cycleInfo">프로그램 기간</Label>
+                <Input
+                  id="cycleInfo"
+                  name="cycleInfo"
+                  defaultValue={program.cycleInfo ?? ""}
+                  placeholder="예: 8-10주, 12주 완성, 4주 집중"
+                  disabled={isUpdating}
+                />
+                <p className="text-xs text-muted-foreground">
+                  프로그램 진행 기간을 자유롭게 입력하세요
+                </p>
+              </div>
             </div>
 
             <Button type="submit" disabled={isUpdating}>

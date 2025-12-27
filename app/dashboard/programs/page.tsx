@@ -83,15 +83,34 @@ export default async function ProgramsPage() {
                       {program.description || "설명 없음"}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>워크아웃 {program.workouts?.length || 0}개</span>
-                      <span>
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">워크아웃 {program.workouts?.length || 0}개</span>
+                      <span className="font-medium">
                         {program.price === 0
                           ? "무료"
                           : `₩${program.price.toLocaleString()}/월`}
                       </span>
                     </div>
+                    {(program.difficulty || program.cycleInfo || program.daysPerWeek) && (
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {program.difficulty && (
+                          <Badge variant="outline" className="font-normal">
+                            난이도 {program.difficulty}/5
+                          </Badge>
+                        )}
+                        {program.cycleInfo && (
+                          <Badge variant="outline" className="font-normal">
+                            {program.cycleInfo}
+                          </Badge>
+                        )}
+                        {program.daysPerWeek && (
+                          <Badge variant="outline" className="font-normal">
+                            주 {program.daysPerWeek}일
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </Link>

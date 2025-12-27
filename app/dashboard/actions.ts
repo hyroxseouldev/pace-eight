@@ -23,6 +23,13 @@ export async function createProgram(formData: FormData) {
   const description = formData.get("description") as string;
   const price = parseInt(formData.get("price") as string) || 0;
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
+  
+  // 새로운 메타데이터 필드
+  const difficulty = parseInt(formData.get("difficulty") as string) || 3;
+  const trainingTime = parseInt(formData.get("trainingTime") as string) || null;
+  const daysPerWeek = parseInt(formData.get("daysPerWeek") as string) || null;
+  const sessionsPerDay = parseInt(formData.get("sessionsPerDay") as string) || 1;
+  const cycleInfo = formData.get("cycleInfo") as string;
 
   if (!title.trim()) {
     return { error: "프로그램 제목을 입력해주세요." };
@@ -37,6 +44,11 @@ export async function createProgram(formData: FormData) {
         description: description?.trim() || null,
         price,
         thumbnailUrl: thumbnailUrl?.trim() || null,
+        difficulty,
+        trainingTime,
+        daysPerWeek,
+        sessionsPerDay,
+        cycleInfo: cycleInfo?.trim() || null,
         isActive: false, // 기본값: 비공개
       })
       .returning();
@@ -66,6 +78,13 @@ export async function updateProgram(programId: string, formData: FormData) {
   const price = parseInt(formData.get("price") as string) || 0;
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
   const isActive = formData.get("isActive") === "true";
+  
+  // 새로운 메타데이터 필드
+  const difficulty = parseInt(formData.get("difficulty") as string) || 3;
+  const trainingTime = parseInt(formData.get("trainingTime") as string) || null;
+  const daysPerWeek = parseInt(formData.get("daysPerWeek") as string) || null;
+  const sessionsPerDay = parseInt(formData.get("sessionsPerDay") as string) || 1;
+  const cycleInfo = formData.get("cycleInfo") as string;
 
   if (!title.trim()) {
     return { error: "프로그램 제목을 입력해주세요." };
@@ -79,6 +98,11 @@ export async function updateProgram(programId: string, formData: FormData) {
         description: description?.trim() || null,
         price,
         thumbnailUrl: thumbnailUrl?.trim() || null,
+        difficulty,
+        trainingTime,
+        daysPerWeek,
+        sessionsPerDay,
+        cycleInfo: cycleInfo?.trim() || null,
         isActive,
       })
       .where(and(eq(programs.id, programId), eq(programs.coachId, user.id)));
