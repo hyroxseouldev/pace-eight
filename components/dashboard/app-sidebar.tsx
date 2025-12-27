@@ -53,11 +53,6 @@ const menuItems = [
     icon: Package,
   },
   {
-    title: "구독자 관리",
-    url: "/dashboard/users",
-    icon: Users,
-  },
-  {
     title: "설정",
     url: "/dashboard/settings",
     icon: Settings,
@@ -77,10 +72,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 px-2 py-1.5"
-        >
+        <Link href="/dashboard" className="flex items-center gap-2 px-2 py-1.5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Dumbbell className="size-5" />
           </div>
@@ -133,9 +125,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-medium">
-                      {user?.name ?? "코치"}
-                    </span>
+                    <span className="font-medium">{user?.name ?? "코치"}</span>
                     <span className="text-xs text-muted-foreground truncate max-w-[140px]">
                       {user?.email ?? "coach@pace.kr"}
                     </span>
@@ -172,4 +162,3 @@ export function AppSidebar({ user }: AppSidebarProps) {
     </Sidebar>
   );
 }
-

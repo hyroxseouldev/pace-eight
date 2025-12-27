@@ -42,11 +42,7 @@ export default async function DashboardLayout({
           avatarUrl: profile?.avatarUrl,
         }}
       />
-      <SidebarInset>
-        {children}
-      </SidebarInset>
-      <Toaster position="top-right" />
+      <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   );
 }
-
