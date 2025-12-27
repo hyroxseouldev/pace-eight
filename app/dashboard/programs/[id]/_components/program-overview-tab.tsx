@@ -143,7 +143,7 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
                 rel="noopener noreferrer"
               >
                 <ExternalLink className="mr-2 size-4" />
-                판매 페이지 보기
+                판매 페이지 미리보기
               </a>
             </Button>
           </CardContent>
