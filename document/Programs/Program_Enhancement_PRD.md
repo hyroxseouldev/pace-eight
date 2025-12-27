@@ -835,7 +835,7 @@ COMMENT ON COLUMN programs.sale_stop_reason IS '판매 중지 사유 (판매 중
   className="relative h-[400px] bg-cover bg-center"
   style={{ backgroundImage: `url(${program.thumbnailUrl})` }}
 >
-  <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/80" />
+  <div className="absolute inset-0 from-black/60 to-black/80" />
   <div className="relative container mx-auto px-4 py-16">
     <h1>{program.title}</h1>
     {/* ... */}
