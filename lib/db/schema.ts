@@ -27,6 +27,15 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "inactive", // 비활성
 ]);
 
+// 4. 이미지 타입 (이미지 분류용)
+export const imageTypeEnum = pgEnum("image_type", [
+  "profile", // 프로필 이미지
+  "program", // 프로그램 썸네일
+  "editor", // 위지윅 에디터 콘텐츠
+  "workout", // 운동 기록 사진 (향후)
+  "other", // 기타
+]);
+
 // --- 테이블 설계 ---
 
 // [Profiles] Supabase Auth 유저와 연동되는 기본 정보
@@ -128,11 +137,52 @@ export const workoutLogs = pgTable("workout_logs", {
   record: text("record"), // 예: "12:30", "100kg" 등 유저가 남긴 기록
 });
 
+// [Images] 이미지 스토리지 메타데이터
+export const images = pgTable("images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  // Storage 정보
+  storagePath: text("storage_path").notNull(), // 버킷 내 전체 경로
+  bucket: text("bucket").notNull(), // 버킷 이름
+  publicUrl: text("public_url").notNull(), // 공개 URL
+
+  // 파일 메타데이터
+  originalName: text("original_name").notNull(), // 원본 파일명
+  fileName: text("file_name").notNull(), // 저장된 파일명 (UUID)
+  mimeType: text("mime_type").notNull(), // MIME type
+  size: integer("size").notNull(), // 파일 크기 (bytes)
+
+  // 분류 및 소유권
+  type: imageTypeEnum("type").default("other").notNull(),
+  uploadedBy: uuid("uploaded_by")
+    .references(() => profiles.id, { onDelete: "cascade" })
+    .notNull(),
+
+  // 사용처 연결 (Polymorphic 대신 선택적 FK)
+  profileId: uuid("profile_id").references(() => profiles.id, {
+    onDelete: "set null",
+  }),
+  programId: uuid("program_id").references(() => programs.id, {
+    onDelete: "set null",
+  }),
+  workoutSessionId: uuid("workout_session_id").references(
+    () => workoutSessions.id,
+    { onDelete: "set null" }
+  ),
+
+  // 관리 필드
+  isUsed: boolean("is_used").default(true).notNull(), // 실제 사용 여부
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // --- 관계 설정 (Drizzle Relations) ---
 
 export const profilesRelations = relations(profiles, ({ many }) => ({
   programs: many(programs),
   subscriptions: many(subscriptions),
+  uploadedImages: many(images),
 }));
 
 export const programsRelations = relations(programs, ({ one, many }) => ({
@@ -141,6 +191,7 @@ export const programsRelations = relations(programs, ({ one, many }) => ({
     references: [profiles.id],
   }),
   workouts: many(workouts),
+  images: many(images),
 }));
 
 export const workoutsRelations = relations(workouts, ({ one, many }) => ({
@@ -153,11 +204,12 @@ export const workoutsRelations = relations(workouts, ({ one, many }) => ({
 
 export const workoutSessionsRelations = relations(
   workoutSessions,
-  ({ one }) => ({
+  ({ one, many }) => ({
     workout: one(workouts, {
       fields: [workoutSessions.workoutId],
       references: [workouts.id],
     }),
+    images: many(images),
   })
 );
 
@@ -169,5 +221,24 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   program: one(programs, {
     fields: [subscriptions.programId],
     references: [programs.id],
+  }),
+}));
+
+export const imagesRelations = relations(images, ({ one }) => ({
+  uploader: one(profiles, {
+    fields: [images.uploadedBy],
+    references: [profiles.id],
+  }),
+  profile: one(profiles, {
+    fields: [images.profileId],
+    references: [profiles.id],
+  }),
+  program: one(programs, {
+    fields: [images.programId],
+    references: [programs.id],
+  }),
+  workoutSession: one(workoutSessions, {
+    fields: [images.workoutSessionId],
+    references: [workoutSessions.id],
   }),
 }));
