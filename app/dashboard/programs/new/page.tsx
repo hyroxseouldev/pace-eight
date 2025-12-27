@@ -79,6 +79,21 @@ export default function NewProgramPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="slug">
+                    URL 슬러그 (선택사항)
+                  </Label>
+                  <Input
+                    id="slug"
+                    name="slug"
+                    placeholder="예: 30-day-hyrox-basic (영어, 숫자, 하이픈만 가능)"
+                    disabled={isLoading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    비워두면 제목에서 자동으로 생성됩니다. 영어와 숫자만 사용 가능합니다.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="description">프로그램 간단 설명</Label>
                   <RichTextEditor
                     content={description}

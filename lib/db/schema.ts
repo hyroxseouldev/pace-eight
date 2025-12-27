@@ -65,6 +65,7 @@ export const programs = pgTable("programs", {
     .references(() => profiles.id, { onDelete: "cascade" })
     .notNull(),
   title: text("title").notNull(),
+  slug: text("slug").notNull().unique(), // SEO 친화적 URL (예: "30-day-hyrox-basic")
   description: text("description"), // 간단한 설명
   content: text("content"), // 위지윅 에디터로 작성된 상세 콘텐츠 (HTML)
   type: programTypeEnum("type").default("relative").notNull(),

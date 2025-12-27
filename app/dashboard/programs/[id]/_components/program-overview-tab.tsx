@@ -30,6 +30,7 @@ interface ProgramOverviewTabProps {
   program: {
     id: string;
     title: string;
+    slug: string;
     description: string | null;
     content: string | null;
     price: number;
@@ -138,7 +139,7 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
           <CardContent className="pt-0">
             <Button variant="outline" size="sm" asChild>
               <a
-                href={`/programs/${program.id}`}
+                href={`/programs/${program.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -171,6 +172,20 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
                 required
                 disabled={isUpdating}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="slug">URL 슬러그</Label>
+              <Input
+                id="slug"
+                name="slug"
+                defaultValue={program.slug}
+                placeholder="예: 30-day-hyrox-basic"
+                disabled={isUpdating}
+              />
+              <p className="text-xs text-muted-foreground">
+                영어, 숫자, 하이픈만 사용 가능합니다. 판매 페이지 URL에 사용됩니다.
+              </p>
             </div>
 
             <div className="space-y-2">

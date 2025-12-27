@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProgramForSale } from "@/app/dashboard/actions";
+import { getProgramForSaleBySlug } from "@/app/dashboard/actions";
 import { ProgramHero } from "./_components/program-hero";
 import { ProgramContent } from "./_components/program-content";
 import { WorkoutPreview } from "./_components/workout-preview";
@@ -10,13 +10,13 @@ import { MobileCTABar } from "./_components/mobile-cta-bar";
 
 interface ProgramPageProps {
   params: {
-    id: string;
+    slug: string;
   };
 }
 
 export default async function ProgramPage({ params }: ProgramPageProps) {
-  const { id } = await params; // Await params in Next.js 15+
-  const program = await getProgramForSale(id);
+  const { slug } = await params;
+  const program = await getProgramForSaleBySlug(slug);
 
   if (!program) {
     notFound();

@@ -12,6 +12,7 @@ import {
   profiles,
 } from "@/lib/db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
+import { generateUniqueSlug } from "@/lib/utils/slug";
 
 // ==================== 프로그램 관련 Actions ====================
 
@@ -26,6 +27,7 @@ export async function createProgram(formData: FormData) {
   }
 
   const title = formData.get("title") as string;
+  const customSlug = formData.get("slug") as string;
   const description = formData.get("description") as string;
   const content = formData.get("content") as string;
   const price = parseInt(formData.get("price") as string) || 0;
@@ -44,11 +46,15 @@ export async function createProgram(formData: FormData) {
   }
 
   try {
+    // 고유한 슬러그 생성 (커스텀 슬러그가 있으면 우선 사용)
+    const slug = await generateUniqueSlug(title.trim(), undefined, customSlug);
+
     const [newProgram] = await db
       .insert(programs)
       .values({
         coachId: user.id,
         title: title.trim(),
+        slug,
         description: description?.trim() || null,
         content: content?.trim() || null,
         price,
@@ -83,6 +89,7 @@ export async function updateProgram(programId: string, formData: FormData) {
   }
 
   const title = formData.get("title") as string;
+  const customSlug = formData.get("slug") as string;
   const description = formData.get("description") as string;
   const content = formData.get("content") as string;
   const price = parseInt(formData.get("price") as string) || 0;
@@ -102,10 +109,14 @@ export async function updateProgram(programId: string, formData: FormData) {
   }
 
   try {
+    // 슬러그 생성 (커스텀 슬러그가 있으면 우선 사용)
+    const slug = await generateUniqueSlug(title.trim(), programId, customSlug);
+
     await db
       .update(programs)
       .set({
         title: title.trim(),
+        slug,
         description: description?.trim() || null,
         content: content?.trim() || null,
         price,
@@ -810,44 +821,10 @@ export async function updateProfile(formData: FormData) {
 
 // ==================== 공개 프로그램 조회 (판매 페이지용) ====================
 
-export async function getProgramForSale(programId: string) {
-  // #region agent log
-  fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "actions.ts:813",
-      message: "getProgramForSale START",
-      data: { programId: programId, programIdType: typeof programId, programIdIsUndefined: programId === undefined },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      hypothesisId: "E",
-    }),
-  }).catch(() => {});
-  // #endregion
-
+export async function getProgramForSaleBySlug(slug: string) {
   try {
-    // #region agent log
-    fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "actions.ts:825",
-        message: "BEFORE query",
-        data: { 
-          programIdParam: programId,
-          programIdType: typeof programId,
-          isActiveValue: true
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        hypothesisId: "E",
-      }),
-    }).catch(() => {});
-    // #endregion
-
     const program = await db.query.programs.findFirst({
-      where: and(eq(programs.id, programId), eq(programs.isActive, true)),
+      where: and(eq(programs.slug, slug), eq(programs.isActive, true)),
       with: {
         coach: true,
         workouts: {
@@ -856,21 +833,6 @@ export async function getProgramForSale(programId: string) {
       },
     });
 
-    // #region agent log
-    fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "actions.ts:847",
-        message: "AFTER query SUCCESS",
-        data: { hasProgram: !!program },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        hypothesisId: "E",
-      }),
-    }).catch(() => {});
-    // #endregion
-
     return program;
   } catch (error) {
     // #region agent log
@@ -878,8 +840,8 @@ export async function getProgramForSale(programId: string) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        location: "actions.ts:858",
-        message: "getProgramForSale ERROR",
+        location: "actions.ts:681",
+        message: "getProgramById ERROR",
         data: {
           errorMessage: error instanceof Error ? error.message : "unknown",
           errorCode: (error as any)?.code,
@@ -887,7 +849,8 @@ export async function getProgramForSale(programId: string) {
         },
         timestamp: Date.now(),
         sessionId: "debug-session",
-        hypothesisId: "E",
+        runId: "slug-debug",
+        hypothesisId: "A,D",
       }),
     }).catch(() => {});
     // #endregion
