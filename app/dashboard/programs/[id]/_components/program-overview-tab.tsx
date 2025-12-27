@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ interface ProgramOverviewTabProps {
     id: string;
     title: string;
     description: string | null;
+    content: string | null;
     price: number;
     thumbnailUrl: string | null;
     difficulty: number | null;
@@ -47,6 +49,8 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingActive, setIsTogglingActive] = useState(false);
+  const [description, setDescription] = useState(program.description || "");
+  const [content, setContent] = useState(program.content || "");
 
   async function handleUpdate(formData: FormData) {
     setIsUpdating(true);
@@ -170,14 +174,31 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                defaultValue={program.description ?? ""}
-                rows={4}
-                disabled={isUpdating}
+              <Label htmlFor="description">간단 설명</Label>
+              <RichTextEditor
+                content={description}
+                onChange={setDescription}
+                placeholder="프로그램의 간단한 소개를 작성해주세요."
+                editable={!isUpdating}
               />
+              <input type="hidden" name="description" value={description} />
+              <p className="text-xs text-muted-foreground">
+                프로그램 카드에 표시될 간단한 설명입니다.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="content">상세 콘텐츠</Label>
+              <RichTextEditor
+                content={content}
+                onChange={setContent}
+                placeholder="프로그램의 목표, 대상, 준비물, 운동 방법 등 상세한 내용을 작성해주세요."
+                editable={!isUpdating}
+              />
+              <input type="hidden" name="content" value={content} />
+              <p className="text-xs text-muted-foreground">
+                💡 YouTube 영상과 이미지를 추가하여 더 풍부한 설명을 제공하세요.
+              </p>
             </div>
 
             <div className="space-y-2">

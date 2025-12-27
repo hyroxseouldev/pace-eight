@@ -16,6 +16,7 @@ export default function NewProgramPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true);
@@ -78,14 +79,28 @@ export default function NewProgramPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">프로그램 상세 설명</Label>
+                  <Label htmlFor="description">프로그램 간단 설명</Label>
                   <RichTextEditor
                     content={description}
                     onChange={setDescription}
-                    placeholder="프로그램의 목표, 대상, 준비물 등을 자유롭게 작성해주세요. 이미지와 영상도 추가할 수 있습니다."
+                    placeholder="프로그램의 간단한 소개를 작성해주세요."
                     editable={!isLoading}
                   />
                   <input type="hidden" name="description" value={description} />
+                  <p className="text-xs text-muted-foreground">
+                    프로그램 카드에 표시될 간단한 설명입니다.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="content">프로그램 상세 콘텐츠</Label>
+                  <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    placeholder="프로그램의 목표, 대상, 준비물, 운동 방법 등 상세한 내용을 작성해주세요. 이미지와 영상도 추가할 수 있습니다."
+                    editable={!isLoading}
+                  />
+                  <input type="hidden" name="content" value={content} />
                   <p className="text-xs text-muted-foreground">
                     💡 YouTube 영상과 이미지를 추가하여 더 풍부한 설명을 제공하세요.
                   </p>

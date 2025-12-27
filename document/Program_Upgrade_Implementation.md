@@ -6,6 +6,9 @@
 - ✅ `workout_sessions` 테이블 추가 (lib/db/schema.ts)
 - ✅ `workouts` 테이블 간소화 (Day 정보만 담당)
 - ✅ 관계 설정 완료 (workouts -> sessions)
+- ✅ `programs` 테이블에 메타데이터 필드 추가 (difficulty, trainingTime, daysPerWeek, sessionsPerDay, cycleInfo)
+- ✅ `programs` 테이블에 `content` 필드 추가 (위지윅 에디터용 상세 콘텐츠)
+- ✅ `images` 테이블 추가 (이미지 스토리지 메타데이터 관리)
 
 ### 2. 위지윅 에디터 컴포넌트
 - ✅ `RichTextEditor` 컴포넌트 개발 (components/ui/rich-text-editor.tsx)
@@ -17,8 +20,10 @@
   - Undo/Redo
 
 ### 3. 프로그램 생성/수정 페이지
-- ✅ 프로그램 설명에 RichTextEditor 적용 (app/dashboard/programs/new/page.tsx)
-- ✅ 기존 Textarea를 에디터로 교체
+- ✅ 프로그램 간단 설명 (`description`)과 상세 콘텐츠 (`content`) 분리
+- ✅ 두 필드 모두 RichTextEditor 적용 (app/dashboard/programs/new/page.tsx)
+- ✅ 메타데이터 입력 필드 추가 (난이도, 훈련 시간, 주당 일수, 세션 수, 프로그램 기간)
+- ✅ 프로그램 개요 탭에서 모든 필드 수정 가능
 
 ### 4. 워크아웃 관리 UI 개편
 - ✅ 좌측: Day 리스트 (app/dashboard/programs/[id]/_components/workouts-tab.tsx)
@@ -52,18 +57,20 @@ pnpm add @tiptap/react @tiptap/pm @tiptap/starter-kit @tiptap/extension-youtube 
 
 ## 🗄️ 데이터베이스 마이그레이션
 
-Supabase에 새 테이블을 생성해야 합니다:
+Supabase에 새 테이블 및 컬럼을 추가해야 합니다:
 
 ### 방법 1: Supabase Dashboard에서 직접 실행
 
 1. Supabase Dashboard → SQL Editor로 이동
-2. `supabase/migrations/add_workout_sessions.sql` 파일 내용 복사
-3. 실행
+2. 다음 마이그레이션 파일들의 내용을 순서대로 실행:
+   - `supabase/migrations/add_workout_sessions.sql`
+   - `supabase/migrations/add_program_metadata_fields.sql`
+   - `supabase/migrations/add_program_content_field.sql`
 
 ### 방법 2: SQL 직접 실행
 
 ```sql
--- 워크아웃 세션 테이블 생성
+-- 1. 워크아웃 세션 테이블 생성
 CREATE TABLE IF NOT EXISTS workout_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workout_id UUID NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
@@ -76,6 +83,18 @@ CREATE TABLE IF NOT EXISTS workout_sessions (
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_workout_sessions_workout_id ON workout_sessions(workout_id);
 CREATE INDEX IF NOT EXISTS idx_workout_sessions_order_index ON workout_sessions(order_index);
+
+-- 2. 프로그램 메타데이터 필드 추가
+ALTER TABLE programs 
+ADD COLUMN IF NOT EXISTS difficulty INTEGER DEFAULT 3,
+ADD COLUMN IF NOT EXISTS training_time INTEGER,
+ADD COLUMN IF NOT EXISTS days_per_week INTEGER,
+ADD COLUMN IF NOT EXISTS sessions_per_day INTEGER DEFAULT 1,
+ADD COLUMN IF NOT EXISTS cycle_info TEXT;
+
+-- 3. 프로그램 상세 콘텐츠 필드 추가
+ALTER TABLE programs 
+ADD COLUMN IF NOT EXISTS content TEXT;
 ```
 
 ---
@@ -84,8 +103,18 @@ CREATE INDEX IF NOT EXISTS idx_workout_sessions_order_index ON workout_sessions(
 
 ### 1. 프로그램 생성
 1. 대시보드 → 프로그램 → "새 프로그램 만들기"
-2. 제목, **위지윅 에디터로 상세 설명** 작성
-3. 가격, 썸네일 입력 후 생성
+2. **기본 정보 입력:**
+   - 제목 (필수)
+   - 간단 설명 (위지윅 에디터) - 프로그램 카드에 표시
+   - 상세 콘텐츠 (위지윅 에디터) - 프로그램 상세 페이지에 표시
+   - 가격, 썸네일
+3. **메타데이터 입력:**
+   - 난이도 (1-5)
+   - 훈련 시간 (분)
+   - 주당 운동 일수
+   - 하루 세션 수
+   - 프로그램 기간 (예: "8-10주")
+4. 생성 후 워크아웃 추가
 
 ### 2. Day 추가
 1. 프로그램 상세 → 워크아웃 탭
@@ -109,18 +138,23 @@ CREATE INDEX IF NOT EXISTS idx_workout_sessions_order_index ON workout_sessions(
 
 ```
 /Users/sunmkim/Dev2026/pace-8/
-├── lib/db/schema.ts                    # DB 스키마 (workout_sessions 추가)
+├── lib/db/
+│   └── schema.ts                       # DB 스키마 (programs 필드 추가, workout_sessions 추가, images 추가)
 ├── components/ui/
 │   └── rich-text-editor.tsx            # 위지윅 에디터 컴포넌트
 ├── app/dashboard/
-│   ├── actions.ts                      # Server Actions (세션 CRUD 추가)
+│   ├── actions.ts                      # Server Actions (프로그램/세션 CRUD, 메타데이터 처리)
 │   └── programs/
-│       ├── new/page.tsx                # 프로그램 생성 (에디터 적용)
+│       ├── page.tsx                    # 프로그램 목록 (메타데이터 배지 표시)
+│       ├── new/page.tsx                # 프로그램 생성 (description + content 에디터, 메타데이터 입력)
 │       └── [id]/_components/
+│           ├── program-overview-tab.tsx  # 프로그램 개요 (description + content 에디터, 메타데이터 수정)
 │           └── workouts-tab.tsx        # 워크아웃 관리 (멀티 세션)
 ├── app/globals.css                     # Prose 스타일 추가
 └── supabase/migrations/
-    └── add_workout_sessions.sql        # DB 마이그레이션 파일
+    ├── add_workout_sessions.sql        # 워크아웃 세션 테이블 생성
+    ├── add_program_metadata_fields.sql # 프로그램 메타데이터 필드 추가
+    └── add_program_content_field.sql   # 프로그램 content 필드 추가
 ```
 
 ---
@@ -152,6 +186,19 @@ CREATE INDEX IF NOT EXISTS idx_workout_sessions_order_index ON workout_sessions(
 
 ## 📝 참고 사항
 
+### 프로그램 필드 구조
+- **description**: 간단한 설명 (프로그램 카드, 목록에 표시)
+- **content**: 상세 콘텐츠 (프로그램 상세 페이지에 표시)
+- 두 필드 모두 위지윅 에디터로 HTML 형식 저장
+
+### 메타데이터 활용
+- **difficulty**: 1~5점 척도 (필터링에 사용)
+- **trainingTime**: 1회 운동 시간 (분 단위)
+- **daysPerWeek**: 주당 운동 일수
+- **sessionsPerDay**: 하루 세션 수 (기본값: 1)
+- **cycleInfo**: 프로그램 기간 정보 (자유 텍스트)
+
+### 에디터 기능
 - 에디터는 HTML 형식으로 저장됩니다
 - YouTube URL은 자동으로 임베드됩니다
 - 이미지는 현재 URL 입력 방식입니다 (향후 업로드 기능 추가 예정)

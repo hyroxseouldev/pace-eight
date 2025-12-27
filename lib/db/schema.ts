@@ -65,7 +65,8 @@ export const programs = pgTable("programs", {
     .references(() => profiles.id, { onDelete: "cascade" })
     .notNull(),
   title: text("title").notNull(),
-  description: text("description"),
+  description: text("description"), // 간단한 설명
+  content: text("content"), // 위지윅 에디터로 작성된 상세 콘텐츠 (HTML)
   type: programTypeEnum("type").default("relative").notNull(),
   price: integer("price").notNull(),
   thumbnailUrl: text("thumbnail_url"),

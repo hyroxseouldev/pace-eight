@@ -21,6 +21,7 @@ export async function createProgram(formData: FormData) {
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
+  const content = formData.get("content") as string;
   const price = parseInt(formData.get("price") as string) || 0;
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
   
@@ -42,6 +43,7 @@ export async function createProgram(formData: FormData) {
         coachId: user.id,
         title: title.trim(),
         description: description?.trim() || null,
+        content: content?.trim() || null,
         price,
         thumbnailUrl: thumbnailUrl?.trim() || null,
         difficulty,
@@ -75,6 +77,7 @@ export async function updateProgram(programId: string, formData: FormData) {
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
+  const content = formData.get("content") as string;
   const price = parseInt(formData.get("price") as string) || 0;
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
   const isActive = formData.get("isActive") === "true";
@@ -96,6 +99,7 @@ export async function updateProgram(programId: string, formData: FormData) {
       .set({
         title: title.trim(),
         description: description?.trim() || null,
+        content: content?.trim() || null,
         price,
         thumbnailUrl: thumbnailUrl?.trim() || null,
         difficulty,
