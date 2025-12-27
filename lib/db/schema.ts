@@ -6,6 +6,7 @@ import {
   timestamp,
   pgEnum,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -70,7 +71,19 @@ export const programs = pgTable("programs", {
   content: text("content"), // 위지윅 에디터로 작성된 상세 콘텐츠 (HTML)
   type: programTypeEnum("type").default("relative").notNull(),
   price: integer("price").notNull(),
-  thumbnailUrl: text("thumbnail_url"),
+  
+  // 썸네일 관련
+  thumbnailUrl: text("thumbnail_url"), // 기존 URL 입력 또는 업로드된 이미지 URL
+  thumbnailImageId: uuid("thumbnail_image_id").references(() => images.id, {
+    onDelete: "set null",
+  }), // 업로드된 썸네일 이미지 ID
+
+  // 주차별 커리큘럼
+  weeklyCurriculum: jsonb("weekly_curriculum").$type<WeeklyCurriculumItem[]>(),
+
+  // 판매 상태 관리
+  onSale: boolean("on_sale").default(true).notNull(), // 판매 가능 여부
+  saleStopReason: text("sale_stop_reason"), // 판매 중지 사유
 
   // MVP용 메타데이터: 필터링 및 상세 정보 표시용
   difficulty: integer("difficulty").default(3), // 1~5점 척도
@@ -82,6 +95,13 @@ export const programs = pgTable("programs", {
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// 주차별 커리큘럼 타입 정의
+export type WeeklyCurriculumItem = {
+  week: number;
+  title: string;
+  description: string;
+};
 
 // [Workouts] 날짜별 상세 운동 루틴 (Day 정보만 담당)
 export const workouts = pgTable("workouts", {

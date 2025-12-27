@@ -10,9 +10,11 @@ import {
   workoutSessions,
   subscriptions,
   profiles,
+  type WeeklyCurriculumItem,
 } from "@/lib/db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { generateUniqueSlug } from "@/lib/utils/slug";
+import { uploadImage, replaceImage, deleteImage } from "@/lib/storage";
 
 // ==================== 프로그램 관련 Actions ====================
 
@@ -370,7 +372,7 @@ export async function createWorkoutSession(
     const maxOrderIndex =
       workout.sessions.length > 0
         ? Math.max(...workout.sessions.map((s) => s.orderIndex))
-        : -1;
+      : -1;
 
     const [newSession] = await db
       .insert(workoutSessions)
@@ -562,18 +564,18 @@ export async function getProgramById(programId: string) {
     // #endregion
 
     const result = await db.query.programs.findFirst({
-      where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
-      with: {
-        workouts: {
-          orderBy: [workouts.dayNumber],
-          with: {
-            sessions: {
-              orderBy: [workoutSessions.orderIndex],
-            },
+    where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
+    with: {
+      workouts: {
+        orderBy: [workouts.dayNumber],
+        with: {
+          sessions: {
+            orderBy: [workoutSessions.orderIndex],
           },
         },
       },
-    });
+    },
+  });
 
     // #region agent log
     fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
@@ -657,10 +659,10 @@ export async function getProgramSubscribers(programId: string) {
     }).catch(() => {});
     // #endregion
 
-    // 프로그램 소유권 확인
-    const program = await db.query.programs.findFirst({
-      where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
-    });
+  // 프로그램 소유권 확인
+  const program = await db.query.programs.findFirst({
+    where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
+  });
 
     // #region agent log
     fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
@@ -677,17 +679,17 @@ export async function getProgramSubscribers(programId: string) {
     }).catch(() => {});
     // #endregion
 
-    if (!program) {
-      return [];
-    }
+  if (!program) {
+    return [];
+  }
 
-    return db.query.subscriptions.findMany({
-      where: eq(subscriptions.programId, programId),
-      with: {
-        user: true,
-      },
-      orderBy: [desc(subscriptions.createdAt)],
-    });
+  return db.query.subscriptions.findMany({
+    where: eq(subscriptions.programId, programId),
+    with: {
+      user: true,
+    },
+    orderBy: [desc(subscriptions.createdAt)],
+  });
   } catch (error) {
     // #region agent log
     fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
@@ -739,7 +741,7 @@ export async function getCoachStats() {
       .select({ count: count() })
       .from(subscriptions)
       .where(eq(subscriptions.status, "active"));
-
+    
     // 실제로는 programIds에 해당하는 구독만 카운트해야 하지만,
     // 간단하게 처리
     subscriberCount = subs[0]?.count ?? 0;
@@ -883,5 +885,217 @@ export async function checkUserSubscription(programId: string) {
   } catch (error) {
     console.error("구독 확인 오류:", error);
     return null;
+  }
+}
+
+// ==================== 프로그램 개선 기능 Actions ====================
+
+// 판매 상태 관리
+export async function updateProgramSaleStatus(
+  programId: string,
+  onSale: boolean,
+  saleStopReason?: string
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  try {
+    await db
+      .update(programs)
+      .set({
+        onSale,
+        saleStopReason: saleStopReason?.trim() || null,
+      })
+      .where(and(eq(programs.id, programId), eq(programs.coachId, user.id)));
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/programs");
+    revalidatePath(`/dashboard/programs/${programId}`);
+    revalidatePath(`/programs/[slug]`, "page");
+
+    return { success: true };
+  } catch (error) {
+    console.error("판매 상태 업데이트 오류:", error);
+    return { error: "판매 상태 업데이트에 실패했습니다." };
+  }
+}
+
+// 썸네일 업로드
+export async function uploadProgramThumbnail(programId: string, file: File) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  try {
+    // 프로그램 소유권 확인
+    const program = await db.query.programs.findFirst({
+      where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
+      columns: { id: true, thumbnailImageId: true },
+    });
+
+    if (!program) {
+      return { error: "프로그램을 찾을 수 없습니다." };
+    }
+
+    // 기존 썸네일이 있으면 교체, 없으면 신규 업로드
+    let uploadResult;
+    if (program.thumbnailImageId) {
+      uploadResult = await replaceImage(program.thumbnailImageId, file, {
+        imageType: "program",
+        uploadedBy: user.id,
+        programId: programId,
+        folder: "programs",
+        maxSizeMB: 5,
+      });
+    } else {
+      uploadResult = await uploadImage(file, {
+        imageType: "program",
+        uploadedBy: user.id,
+        programId: programId,
+        folder: "programs",
+        maxSizeMB: 5,
+      });
+    }
+
+    // programs 테이블 업데이트
+    await db
+      .update(programs)
+      .set({
+        thumbnailUrl: uploadResult.publicUrl,
+        thumbnailImageId: uploadResult.id,
+      })
+      .where(eq(programs.id, programId));
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/programs");
+    revalidatePath(`/dashboard/programs/${programId}`);
+    revalidatePath(`/programs/[slug]`, "page");
+
+    return {
+      success: true,
+      thumbnailUrl: uploadResult.publicUrl,
+      imageId: uploadResult.id,
+    };
+  } catch (error) {
+    console.error("썸네일 업로드 오류:", error);
+    return { error: "썸네일 업로드에 실패했습니다." };
+  }
+}
+
+// 썸네일 삭제
+export async function deleteProgramThumbnail(programId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  try {
+    // 프로그램 소유권 확인
+    const program = await db.query.programs.findFirst({
+      where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
+      columns: { id: true, thumbnailImageId: true },
+    });
+
+    if (!program) {
+      return { error: "프로그램을 찾을 수 없습니다." };
+    }
+
+    // 이미지 삭제
+    if (program.thumbnailImageId) {
+      try {
+        await deleteImage(program.thumbnailImageId);
+      } catch (error) {
+        console.warn("이미지 삭제 실패:", error);
+      }
+    }
+
+    // programs 테이블 업데이트
+    await db
+      .update(programs)
+      .set({
+        thumbnailUrl: null,
+        thumbnailImageId: null,
+      })
+      .where(eq(programs.id, programId));
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/programs");
+    revalidatePath(`/dashboard/programs/${programId}`);
+    revalidatePath(`/programs/[slug]`, "page");
+
+    return { success: true };
+  } catch (error) {
+    console.error("썸네일 삭제 오류:", error);
+    return { error: "썸네일 삭제에 실패했습니다." };
+  }
+}
+
+// 주차별 커리큘럼 업데이트
+export async function updateWeeklyCurriculum(
+  programId: string,
+  curriculum: WeeklyCurriculumItem[]
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  // 유효성 검증
+  if (curriculum.length > 0) {
+    for (const item of curriculum) {
+      if (!item.week || !item.title || !item.description) {
+        return { error: "모든 주차 정보를 입력해주세요." };
+      }
+      if (item.week < 1) {
+        return { error: "주차 번호는 1 이상이어야 합니다." };
+      }
+    }
+
+    // 중복 주차 확인
+    const weeks = curriculum.map((item) => item.week);
+    if (new Set(weeks).size !== weeks.length) {
+      return { error: "중복된 주차가 있습니다." };
+    }
+  }
+
+  try {
+    // 주차 번호로 정렬
+    const sortedCurriculum = [...curriculum].sort((a, b) => a.week - b.week);
+
+    await db
+      .update(programs)
+      .set({
+        weeklyCurriculum: sortedCurriculum,
+      })
+      .where(and(eq(programs.id, programId), eq(programs.coachId, user.id)));
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/programs");
+    revalidatePath(`/dashboard/programs/${programId}`);
+    revalidatePath(`/programs/[slug]`, "page");
+
+    return { success: true };
+  } catch (error) {
+    console.error("커리큘럼 업데이트 오류:", error);
+    return { error: "커리큘럼 업데이트에 실패했습니다." };
   }
 }

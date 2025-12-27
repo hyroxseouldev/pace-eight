@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { SubscribeButton } from "./subscribe-button";
 
 interface MobileCTABarProps {
   program: {
     id: string;
     price: number;
+    onSale: boolean;
   };
 }
 
@@ -31,14 +33,26 @@ export function MobileCTABar({ program }: MobileCTABarProps) {
       <Card className="rounded-none border-x-0 border-b-0 p-4 shadow-lg">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm text-muted-foreground">가격</div>
+            <div className="text-sm text-muted-foreground">
+              {program.onSale ? "가격" : "판매 중지"}
+            </div>
             <div className="text-xl font-bold">
-              {program.price === 0
+              {program.onSale ? (
+                program.price === 0
                 ? "무료"
-                : `₩${program.price.toLocaleString()}/월`}
+                  : `₩${program.price.toLocaleString()}/월`
+              ) : (
+                "구매 불가"
+              )}
             </div>
           </div>
+          {program.onSale ? (
           <SubscribeButton programId={program.id} className="flex-1" />
+          ) : (
+            <Button disabled className="flex-1">
+              구독 불가
+            </Button>
+          )}
         </div>
       </Card>
     </div>

@@ -3,20 +3,37 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Plus, Trash2 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { createProgram } from "../../actions";
+
+type WeeklyCurriculumItem = {
+  week: number;
+  title: string;
+  description: string;
+};
 
 export default function NewProgramPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
+  const [price, setPrice] = useState(0);
+  const [curriculum, setCurriculum] = useState<WeeklyCurriculumItem[]>([]);
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true);
@@ -49,7 +66,9 @@ export default function NewProgramPage() {
         <div className="mx-auto max-w-2xl space-y-6">
           {/* 페이지 타이틀 */}
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">새 프로그램 만들기</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              새 프로그램 만들기
+            </h1>
             <p className="text-muted-foreground">
               프로그램 기본 정보를 입력하고 생성하세요
             </p>
@@ -60,7 +79,8 @@ export default function NewProgramPage() {
             <CardHeader>
               <CardTitle>프로그램 정보</CardTitle>
               <CardDescription>
-                프로그램 제목과 설명을 입력해주세요. 생성 후 워크아웃을 추가할 수 있습니다.
+                프로그램 제목과 설명을 입력해주세요. 생성 후 워크아웃을 추가할
+                수 있습니다.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -79,9 +99,7 @@ export default function NewProgramPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="slug">
-                    URL 슬러그 (선택사항)
-                  </Label>
+                  <Label htmlFor="slug">URL 슬러그 (선택사항)</Label>
                   <Input
                     id="slug"
                     name="slug"
@@ -89,7 +107,8 @@ export default function NewProgramPage() {
                     disabled={isLoading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    비워두면 제목에서 자동으로 생성됩니다. 영어와 숫자만 사용 가능합니다.
+                    비워두면 제목에서 자동으로 생성됩니다. 영어와 숫자만 사용
+                    가능합니다.
                   </p>
                 </div>
 
@@ -117,7 +136,8 @@ export default function NewProgramPage() {
                   />
                   <input type="hidden" name="content" value={content} />
                   <p className="text-xs text-muted-foreground">
-                    💡 YouTube 영상과 이미지를 추가하여 더 풍부한 설명을 제공하세요.
+                    💡 YouTube 영상과 이미지를 추가하여 더 풍부한 설명을
+                    제공하세요.
                   </p>
                 </div>
 
@@ -130,15 +150,45 @@ export default function NewProgramPage() {
                     name="price"
                     type="number"
                     min="0"
-                    step="1000"
-                    placeholder="0"
-                    defaultValue="0"
+                    max="10000000"
+                    placeholder="예: 29900"
+                    value={price}
+                    onChange={(e) => setPrice(Number(e.target.value))}
                     required
                     disabled={isLoading}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    0원으로 설정하면 무료 프로그램으로 공개됩니다.
-                  </p>
+                  {price > 0 && (
+                    <p className="text-sm font-medium">
+                      표시 가격:{" "}
+                      <span className="text-primary">
+                        ₩{price.toLocaleString()}
+                      </span>
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      권장 가격 (클릭하여 선택)
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[0, 9900, 19900, 29900, 39900, 49900, 99900].map(
+                        (suggested) => (
+                          <Button
+                            key={suggested}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPrice(suggested)}
+                            className="h-8 text-xs"
+                            disabled={isLoading}
+                          >
+                            {suggested === 0
+                              ? "무료"
+                              : `${suggested.toLocaleString()}원`}
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -158,9 +208,12 @@ export default function NewProgramPage() {
                 {/* 메타데이터 섹션 */}
                 <div className="space-y-4 border-t pt-6">
                   <div>
-                    <h3 className="text-sm font-medium mb-3">프로그램 상세 정보</h3>
+                    <h3 className="text-sm font-medium mb-3">
+                      프로그램 상세 정보
+                    </h3>
                     <p className="text-xs text-muted-foreground mb-4">
-                      프로그램의 세부 정보를 입력하세요. 이 정보는 필터링 및 상세 페이지에 표시됩니다.
+                      프로그램의 세부 정보를 입력하세요. 이 정보는 필터링 및
+                      상세 페이지에 표시됩니다.
                     </p>
                   </div>
 
@@ -268,9 +321,119 @@ export default function NewProgramPage() {
               </form>
             </CardContent>
           </Card>
+
+          {/* 주차별 커리큘럼 (선택사항) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>주차별 커리큘럼 (선택사항)</CardTitle>
+              <CardDescription>
+                프로그램의 주차별 구성과 목표를 설명하세요. 구독자가 프로그램
+                흐름을 이해하는데 도움이 됩니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {curriculum.length === 0 ? (
+                <div className="rounded-lg border-2 border-dashed p-8 text-center">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    아직 추가된 주차 정보가 없습니다.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setCurriculum([{ week: 1, title: "", description: "" }])
+                    }
+                    disabled={isLoading}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />첫 주차 추가
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {curriculum.map((week, index) => (
+                    <Card key={index}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary">{week.week}주차</Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newCurriculum = curriculum.filter(
+                                (_, i) => i !== index
+                              );
+                              // 주차 번호 재정렬
+                              setCurriculum(
+                                newCurriculum.map((item, i) => ({
+                                  ...item,
+                                  week: i + 1,
+                                }))
+                              );
+                            }}
+                            disabled={isLoading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>주차 이름</Label>
+                          <Input
+                            placeholder="예: 기초 체력 다지기"
+                            value={week.title}
+                            onChange={(e) => {
+                              const newCurriculum = [...curriculum];
+                              newCurriculum[index].title = e.target.value;
+                              setCurriculum(newCurriculum);
+                            }}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>주차 설명</Label>
+                          <Textarea
+                            placeholder="이 주차의 목표와 특징을 설명하세요"
+                            value={week.description}
+                            onChange={(e) => {
+                              const newCurriculum = [...curriculum];
+                              newCurriculum[index].description = e.target.value;
+                              setCurriculum(newCurriculum);
+                            }}
+                            rows={3}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setCurriculum([
+                        ...curriculum,
+                        {
+                          week: curriculum.length + 1,
+                          title: "",
+                          description: "",
+                        },
+                      ]);
+                    }}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    주차 추가
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>
   );
 }
-

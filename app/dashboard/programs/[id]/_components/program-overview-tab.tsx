@@ -3,8 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ExternalLink, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExternalLink } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +30,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { updateProgram, deleteProgram, toggleProgramActive } from "../../../actions";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  updateProgram,
+  deleteProgram,
+  toggleProgramActive,
+  updateProgramSaleStatus,
+  updateWeeklyCurriculum,
+} from "../../../actions";
+
+type WeeklyCurriculumItem = {
+  week: number;
+  title: string;
+  description: string;
+};
 
 interface ProgramOverviewTabProps {
   program: {
@@ -35,6 +55,10 @@ interface ProgramOverviewTabProps {
     content: string | null;
     price: number;
     thumbnailUrl: string | null;
+    thumbnailImageId: string | null;
+    weeklyCurriculum: any[] | null;
+    onSale: boolean;
+    saleStopReason: string | null;
     difficulty: number | null;
     trainingTime: number | null;
     daysPerWeek: number | null;
@@ -50,8 +74,18 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingActive, setIsTogglingActive] = useState(false);
+  const [isTogglingSale, setIsTogglingSale] = useState(false);
+  const [isUpdatingCurriculum, setIsUpdatingCurriculum] = useState(false);
   const [description, setDescription] = useState(program.description || "");
   const [content, setContent] = useState(program.content || "");
+  const [price, setPrice] = useState(program.price);
+  const [onSale, setOnSale] = useState(program.onSale);
+  const [saleStopReason, setSaleStopReason] = useState(
+    program.saleStopReason || ""
+  );
+  const [curriculum, setCurriculum] = useState<WeeklyCurriculumItem[]>(
+    (program.weeklyCurriculum as WeeklyCurriculumItem[]) || []
+  );
 
   async function handleUpdate(formData: FormData) {
     setIsUpdating(true);
@@ -101,12 +135,59 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
         return;
       }
 
-      toast.success(checked ? "프로그램이 공개되었습니다!" : "프로그램이 비공개되었습니다.");
+      toast.success(
+        checked ? "프로그램이 공개되었습니다!" : "프로그램이 비공개되었습니다."
+      );
       router.refresh();
     } catch {
       toast.error("상태 변경에 실패했습니다.");
     } finally {
       setIsTogglingActive(false);
+    }
+  }
+
+  async function handleToggleSale(checked: boolean) {
+    setIsTogglingSale(true);
+    try {
+      const result = await updateProgramSaleStatus(
+        program.id,
+        checked,
+        saleStopReason
+      );
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      setOnSale(checked);
+      toast.success(
+        checked ? "판매가 재개되었습니다!" : "판매가 중지되었습니다."
+      );
+      router.refresh();
+    } catch {
+      toast.error("판매 상태 변경에 실패했습니다.");
+    } finally {
+      setIsTogglingSale(false);
+    }
+  }
+
+  async function handleUpdateCurriculum() {
+    setIsUpdatingCurriculum(true);
+    try {
+      const result = await updateWeeklyCurriculum(program.id, curriculum);
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("커리큘럼이 업데이트되었습니다!");
+      router.refresh();
+    } catch {
+      toast.error("커리큘럼 업데이트에 실패했습니다.");
+    } finally {
+      setIsUpdatingCurriculum(false);
     }
   }
 
@@ -136,18 +217,64 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
           </div>
         </CardHeader>
         {program.isActive && (
-          <CardContent className="pt-0">
-            <Button variant="outline" size="sm" asChild>
-              <a
-                href={`/programs/${program.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="mr-2 size-4" />
-                판매 페이지 미리보기
-              </a>
-            </Button>
-          </CardContent>
+          <>
+            <Separator />
+            <CardContent className="space-y-6">
+              {/* 판매 상태 */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">판매 상태</Label>
+                  <p className="text-sm text-muted-foreground">
+                    구독 버튼 활성화 여부
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge variant={onSale ? "default" : "outline"}>
+                    {onSale ? "판매중" : "판매중지"}
+                  </Badge>
+                  <Switch
+                    checked={onSale}
+                    onCheckedChange={handleToggleSale}
+                    disabled={isTogglingSale}
+                  />
+                  {isTogglingSale && <Spinner className="size-4" />}
+                </div>
+              </div>
+
+              {/* 판매 중지 사유 */}
+              {!onSale && (
+                <div className="space-y-2">
+                  <Label htmlFor="saleStopReason">판매 중지 안내 메시지</Label>
+                  <Textarea
+                    id="saleStopReason"
+                    placeholder="예: 프로그램 업데이트 중입니다. 12월 31일에 재개됩니다."
+                    value={saleStopReason}
+                    onChange={(e) => setSaleStopReason(e.target.value)}
+                    onBlur={() => handleToggleSale(false)}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    판매 페이지에 표시될 메시지입니다. 비워두면 기본 메시지가
+                    표시됩니다.
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* 판매 페이지 미리보기 */}
+              <Button variant="outline" size="sm" asChild className="w-full">
+                <a
+                  href={`/programs/${program.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="mr-2 size-4" />
+                  판매 페이지 미리보기
+                </a>
+              </Button>
+            </CardContent>
+          </>
         )}
       </Card>
 
@@ -155,14 +282,16 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
       <Card>
         <CardHeader>
           <CardTitle>기본 정보</CardTitle>
-          <CardDescription>
-            프로그램의 기본 정보를 수정합니다.
-          </CardDescription>
+          <CardDescription>프로그램의 기본 정보를 수정합니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={handleUpdate} className="space-y-6">
-            <input type="hidden" name="isActive" value={String(program.isActive)} />
-            
+            <input
+              type="hidden"
+              name="isActive"
+              value={String(program.isActive)}
+            />
+
             <div className="space-y-2">
               <Label htmlFor="title">프로그램 제목</Label>
               <Input
@@ -184,7 +313,8 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
                 disabled={isUpdating}
               />
               <p className="text-xs text-muted-foreground">
-                영어, 숫자, 하이픈만 사용 가능합니다. 판매 페이지 URL에 사용됩니다.
+                영어, 숫자, 하이픈만 사용 가능합니다. 판매 페이지 URL에
+                사용됩니다.
               </p>
             </div>
 
@@ -223,11 +353,45 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
                 name="price"
                 type="number"
                 min="0"
-                step="1000"
-                defaultValue={program.price}
+                max="10000000"
+                placeholder="예: 29900"
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
                 required
                 disabled={isUpdating}
               />
+              {price > 0 && (
+                <p className="text-sm font-medium">
+                  표시 가격:{" "}
+                  <span className="text-primary">
+                    ₩{price.toLocaleString()}
+                  </span>
+                </p>
+              )}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  권장 가격 (클릭하여 선택)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[0, 9900, 19900, 29900, 39900, 49900, 99900].map(
+                    (suggested) => (
+                      <Button
+                        key={suggested}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPrice(suggested)}
+                        className="h-8 text-xs"
+                        disabled={isUpdating}
+                      >
+                        {suggested === 0
+                          ? "무료"
+                          : `${suggested.toLocaleString()}원`}
+                      </Button>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -247,7 +411,8 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
               <div>
                 <h3 className="text-sm font-medium mb-3">프로그램 상세 정보</h3>
                 <p className="text-xs text-muted-foreground mb-4">
-                  프로그램의 세부 정보를 입력하세요. 이 정보는 필터링 및 상세 페이지에 표시됩니다.
+                  프로그램의 세부 정보를 입력하세요. 이 정보는 필터링 및 상세
+                  페이지에 표시됩니다.
                 </p>
               </div>
 
@@ -346,6 +511,133 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
         </CardContent>
       </Card>
 
+      {/* 주차별 커리큘럼 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>주차별 커리큘럼</CardTitle>
+          <CardDescription>
+            프로그램의 주차별 구성과 목표를 설명하세요. 구독자가 프로그램 흐름을
+            이해하는데 도움이 됩니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {curriculum.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed p-8 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                아직 추가된 주차 정보가 없습니다.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setCurriculum([{ week: 1, title: "", description: "" }])
+                }
+                disabled={isUpdatingCurriculum}
+              >
+                <Plus className="mr-2 h-4 w-4" />첫 주차 추가
+              </Button>
+            </div>
+          ) : (
+            <>
+              {curriculum.map((week, index) => (
+                <Card key={index}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary">{week.week}주차</Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newCurriculum = curriculum.filter(
+                            (_, i) => i !== index
+                          );
+                          // 주차 번호 재정렬
+                          setCurriculum(
+                            newCurriculum.map((item, i) => ({
+                              ...item,
+                              week: i + 1,
+                            }))
+                          );
+                        }}
+                        disabled={isUpdatingCurriculum}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>주차 이름</Label>
+                      <Input
+                        placeholder="예: 기초 체력 다지기"
+                        value={week.title}
+                        onChange={(e) => {
+                          const newCurriculum = [...curriculum];
+                          newCurriculum[index].title = e.target.value;
+                          setCurriculum(newCurriculum);
+                        }}
+                        disabled={isUpdatingCurriculum}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>주차 설명</Label>
+                      <Textarea
+                        placeholder="이 주차의 목표와 특징을 설명하세요"
+                        value={week.description}
+                        onChange={(e) => {
+                          const newCurriculum = [...curriculum];
+                          newCurriculum[index].description = e.target.value;
+                          setCurriculum(newCurriculum);
+                        }}
+                        rows={3}
+                        disabled={isUpdatingCurriculum}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCurriculum([
+                      ...curriculum,
+                      {
+                        week: curriculum.length + 1,
+                        title: "",
+                        description: "",
+                      },
+                    ]);
+                  }}
+                  disabled={isUpdatingCurriculum}
+                  className="flex-1"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  주차 추가
+                </Button>
+                <Button
+                  onClick={handleUpdateCurriculum}
+                  disabled={isUpdatingCurriculum}
+                  className="flex-1"
+                >
+                  {isUpdatingCurriculum ? (
+                    <>
+                      <Spinner className="mr-2 h-4 w-4" />
+                      저장 중...
+                    </>
+                  ) : (
+                    "커리큘럼 저장"
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {/* 위험 구역 */}
       <Card className="border-destructive/50">
         <CardHeader>
@@ -366,8 +658,8 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  이 프로그램과 모든 워크아웃이 영구적으로 삭제됩니다.
-                  이 작업은 되돌릴 수 없습니다.
+                  이 프로그램과 모든 워크아웃이 영구적으로 삭제됩니다. 이 작업은
+                  되돌릴 수 없습니다.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -393,4 +685,3 @@ export function ProgramOverviewTab({ program }: ProgramOverviewTabProps) {
     </div>
   );
 }
-

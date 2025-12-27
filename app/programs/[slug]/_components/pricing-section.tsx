@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Check, AlertCircle } from "lucide-react";
 import { SubscribeButton } from "./subscribe-button";
 
 interface PricingSectionProps {
@@ -9,6 +10,8 @@ interface PricingSectionProps {
     id: string;
     title: string;
     price: number;
+    onSale: boolean;
+    saleStopReason: string | null;
   };
 }
 
@@ -57,7 +60,9 @@ export function PricingSection({ program }: PricingSectionProps) {
             </div>
           </div>
 
-          {/* CTA 버튼 */}
+          {/* CTA 버튼 또는 판매 중지 안내 */}
+          {program.onSale ? (
+            <>
           <SubscribeButton programId={program.id} className="w-full" size="lg" />
 
           {/* 이용 안내 */}
@@ -69,6 +74,19 @@ export function PricingSection({ program }: PricingSectionProps) {
               <li>3. 대시보드에서 운동 시작</li>
             </ol>
           </div>
+            </>
+          ) : (
+            <div className="rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/20 p-6 text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-amber-500 mb-3" />
+              <h3 className="font-semibold text-lg mb-2">현재 판매 중지</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {program.saleStopReason || "이 프로그램은 현재 구매하실 수 없습니다."}
+              </p>
+              <Button variant="outline" disabled className="w-full">
+                구독 불가
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
