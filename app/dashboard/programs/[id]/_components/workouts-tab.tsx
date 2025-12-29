@@ -294,6 +294,10 @@ function SessionManager({
   workout: Workout;
   onDelete: () => void;
 }) {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:290',message:'SessionManager render start',data:{workoutId:workout.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -301,10 +305,20 @@ function SessionManager({
   const [isUpdating, setIsUpdating] = useState(false);
   const [sessionContent, setSessionContent] = useState("");
 
+  // #region agent log
+  const setSessionContentWithLog = (newContent: string) => {
+    fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:302',message:'setSessionContent called',data:{newContent,previousContent:sessionContent},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    setSessionContent(newContent);
+  };
+  // #endregion
+
   const sessions = workout.sessions || [];
 
   // 세션 생성
   async function handleCreateSession(formData: FormData) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:307',message:'handleCreateSession called',data:{workoutId:workout.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     setIsCreating(true);
     try {
       const result = await createWorkoutSession(workout.id, formData);
@@ -325,6 +339,9 @@ function SessionManager({
 
   // 세션 수정
   async function handleUpdateSession(formData: FormData) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:327',message:'handleUpdateSession called',data:{editingSessionId:editingSession?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!editingSession) return;
     setIsUpdating(true);
     try {
@@ -358,6 +375,10 @@ function SessionManager({
       toast.error("세션 삭제에 실패했습니다.");
     }
   }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:362',message:'SessionManager render end',data:{sessionsCount:sessions.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
 
   return (
     <Card>
@@ -402,7 +423,7 @@ function SessionManager({
                     <Label htmlFor="create-session-content">세션 내용</Label>
                     <RichTextEditor
                       content={sessionContent}
-                      onChange={setSessionContent}
+                      onChange={setSessionContentWithLog}
                       placeholder="운동 루틴을 상세히 작성하세요. 이미지와 YouTube 영상도 추가할 수 있습니다."
                       editable={!isCreating}
                     />
@@ -414,6 +435,9 @@ function SessionManager({
                       type="button"
                       variant="outline"
                       onClick={() => {
+                        // #region agent log
+                        fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:416',message:'Cancel button clicked in create dialog',data:{dialogOpen:createDialogOpen},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                        // #endregion
                         setCreateDialogOpen(false);
                         setSessionContent("");
                       }}
@@ -496,6 +520,9 @@ function SessionManager({
                         <Dialog
                           open={editingSession?.id === session.id}
                           onOpenChange={(open) => {
+                            // #region agent log
+                            fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:496',message:'Edit dialog onOpenChange',data:{open,sessionId:session.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                            // #endregion
                             if (!open) {
                               setEditingSession(null);
                               setSessionContent("");
@@ -507,6 +534,9 @@ function SessionManager({
                               variant="ghost"
                               size="icon"
                               onClick={() => {
+                                // #region agent log
+                                fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:510',message:'Edit button clicked',data:{sessionId:session.id,sessionContent:session.content},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+                                // #endregion
                                 setEditingSession(session);
                                 setSessionContent(session.content || "");
                               }}
@@ -538,7 +568,7 @@ function SessionManager({
                                   <Label htmlFor="edit-session-content">세션 내용</Label>
                                   <RichTextEditor
                                     content={sessionContent}
-                                    onChange={setSessionContent}
+                                    onChange={setSessionContentWithLog}
                                     editable={!isUpdating}
                                   />
                                   <input type="hidden" name="content" value={sessionContent} />
@@ -549,6 +579,9 @@ function SessionManager({
                                     type="button"
                                     variant="outline"
                                     onClick={() => {
+                                      // #region agent log
+                                      fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/programs/[id]/_components/workouts-tab.tsx:551',message:'Cancel button clicked in edit dialog',data:{editingSessionId:editingSession?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                                      // #endregion
                                       setEditingSession(null);
                                       setSessionContent("");
                                     }}

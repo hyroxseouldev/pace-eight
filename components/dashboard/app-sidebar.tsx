@@ -10,6 +10,7 @@ import {
   LogOut,
   Dumbbell,
 } from "lucide-react";
+import { handleSignOut } from "@/app/actions/signout";
 
 import {
   Sidebar,
@@ -61,6 +62,10 @@ const menuItems = [
 
 export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
+
+  async function onSignOut() {
+    await handleSignOut();
+  }
 
   const isActive = (url: string) => {
     if (url === "/dashboard") {
@@ -145,14 +150,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/auth/signout"
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="mr-2 size-4" />
-                    로그아웃
-                  </Link>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={onSignOut}
+                >
+                  <LogOut className="mr-2 size-4" />
+                  로그아웃
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

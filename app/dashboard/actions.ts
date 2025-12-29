@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import {
   programs,
@@ -372,7 +372,7 @@ export async function createWorkoutSession(
     const maxOrderIndex =
       workout.sessions.length > 0
         ? Math.max(...workout.sessions.map((s) => s.orderIndex))
-      : -1;
+        : -1;
 
     const [newSession] = await db
       .insert(workoutSessions)
@@ -564,18 +564,18 @@ export async function getProgramById(programId: string) {
     // #endregion
 
     const result = await db.query.programs.findFirst({
-    where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
-    with: {
-      workouts: {
-        orderBy: [workouts.dayNumber],
-        with: {
-          sessions: {
-            orderBy: [workoutSessions.orderIndex],
+      where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
+      with: {
+        workouts: {
+          orderBy: [workouts.dayNumber],
+          with: {
+            sessions: {
+              orderBy: [workoutSessions.orderIndex],
+            },
           },
         },
       },
-    },
-  });
+    });
 
     // #region agent log
     fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
@@ -659,10 +659,10 @@ export async function getProgramSubscribers(programId: string) {
     }).catch(() => {});
     // #endregion
 
-  // 프로그램 소유권 확인
-  const program = await db.query.programs.findFirst({
-    where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
-  });
+    // 프로그램 소유권 확인
+    const program = await db.query.programs.findFirst({
+      where: and(eq(programs.id, programId), eq(programs.coachId, user.id)),
+    });
 
     // #region agent log
     fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
@@ -679,17 +679,17 @@ export async function getProgramSubscribers(programId: string) {
     }).catch(() => {});
     // #endregion
 
-  if (!program) {
-    return [];
-  }
+    if (!program) {
+      return [];
+    }
 
-  return db.query.subscriptions.findMany({
-    where: eq(subscriptions.programId, programId),
-    with: {
-      user: true,
-    },
-    orderBy: [desc(subscriptions.createdAt)],
-  });
+    return db.query.subscriptions.findMany({
+      where: eq(subscriptions.programId, programId),
+      with: {
+        user: true,
+      },
+      orderBy: [desc(subscriptions.createdAt)],
+    });
   } catch (error) {
     // #region agent log
     fetch("http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c", {
@@ -741,7 +741,7 @@ export async function getCoachStats() {
       .select({ count: count() })
       .from(subscriptions)
       .where(eq(subscriptions.status, "active"));
-    
+
     // 실제로는 programIds에 해당하는 구독만 카운트해야 하지만,
     // 간단하게 처리
     subscriberCount = subs[0]?.count ?? 0;

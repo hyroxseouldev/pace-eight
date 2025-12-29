@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { getImageById } from "./db";
 import { listImagesFromDB } from "./db";
 import type { ImageMetadata, ListImagesOptions } from "./types";
@@ -58,4 +58,3 @@ export async function listImages(
 ): Promise<ImageMetadata[]> {
   return listImagesFromDB(options);
 }
-

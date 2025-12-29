@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { type User } from "@supabase/supabase-js";
 
 export default function AccountForm({ user }: { user: User | null }) {
@@ -59,4 +59,3 @@ export default function AccountForm({ user }: { user: User | null }) {
     </div>
   );
 }
-

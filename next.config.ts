@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Next.js 16 Proxy 설정: URL 정규화 건너뛰기
+  skipProxyUrlNormalize: true,
 };
 
 export default nextConfig;

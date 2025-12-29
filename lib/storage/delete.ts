@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import {
   getImageById,
   getImageByPath,
@@ -67,7 +67,9 @@ export async function deleteImage(
 
     console.error("Failed to delete image:", error);
     throw new DeleteError(
-      `이미지 삭제에 실패했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`
+      `이미지 삭제에 실패했습니다: ${
+        error instanceof Error ? error.message : "알 수 없는 오류"
+      }`
     );
   }
 }
@@ -76,18 +78,14 @@ export async function deleteImage(
  * 여러 이미지 일괄 삭제
  * @param imageIds - 이미지 ID 배열
  */
-export async function deleteMultipleImages(
-  imageIds: string[]
-): Promise<void> {
+export async function deleteMultipleImages(imageIds: string[]): Promise<void> {
   if (imageIds.length === 0) return;
 
   try {
     const supabase = createClient();
 
     // 각 이미지 정보 조회
-    const images = await Promise.all(
-      imageIds.map((id) => getImageById(id))
-    );
+    const images = await Promise.all(imageIds.map((id) => getImageById(id)));
 
     const validImages = images.filter((img) => img !== null);
 
@@ -96,17 +94,14 @@ export async function deleteMultipleImages(
     }
 
     // 버킷별로 그룹화
-    const imagesByBucket = validImages.reduce(
-      (acc, img) => {
-        if (!img) return acc;
-        if (!acc[img.bucket]) {
-          acc[img.bucket] = [];
-        }
-        acc[img.bucket].push(img.storagePath);
-        return acc;
-      },
-      {} as Record<string, string[]>
-    );
+    const imagesByBucket = validImages.reduce((acc, img) => {
+      if (!img) return acc;
+      if (!acc[img.bucket]) {
+        acc[img.bucket] = [];
+      }
+      acc[img.bucket].push(img.storagePath);
+      return acc;
+    }, {} as Record<string, string[]>);
 
     // 각 버킷에서 삭제
     await Promise.all(
@@ -124,7 +119,9 @@ export async function deleteMultipleImages(
 
     console.error("Failed to delete multiple images:", error);
     throw new DeleteError(
-      `이미지 일괄 삭제에 실패했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`
+      `이미지 일괄 삭제에 실패했습니다: ${
+        error instanceof Error ? error.message : "알 수 없는 오류"
+      }`
     );
   }
 }
@@ -141,9 +138,6 @@ export async function deleteFromStorage(
   const { error } = await supabase.storage.from(bucket).remove([storagePath]);
 
   if (error) {
-    throw new DeleteError(
-      `Storage 파일 삭제에 실패했습니다: ${error.message}`
-    );
+    throw new DeleteError(`Storage 파일 삭제에 실패했습니다: ${error.message}`);
   }
 }
-

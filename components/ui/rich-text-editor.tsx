@@ -171,6 +171,10 @@ export function RichTextEditor({
   editable = true,
   className,
 }: RichTextEditorProps) {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ui/rich-text-editor.tsx:167',message:'RichTextEditor render start',data:{content,editable},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+
   const editor = useEditor({
     immediatelyRender: false, // SSR hydration mismatch 방지
     extensions: [
@@ -200,6 +204,9 @@ export function RichTextEditor({
     content,
     editable,
     onUpdate: ({ editor }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ui/rich-text-editor.tsx:202',message:'RichTextEditor onChange',data:{html:editor.getHTML()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       onChange?.(editor.getHTML());
     },
     editorProps: {
@@ -214,8 +221,15 @@ export function RichTextEditor({
 
   // content prop이 변경되면 에디터 업데이트
   if (editor && content !== editor.getHTML() && !editor.isFocused) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ui/rich-text-editor.tsx:216',message:'Updating editor content during render',data:{contentProp:content,editorContent:editor.getHTML(),isFocused:editor.isFocused},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     editor.commands.setContent(content);
   }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/f7f99eab-f4c9-4833-b8f7-17f922c1409c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ui/rich-text-editor.tsx:220',message:'RichTextEditor render end',data:{hasEditor:!!editor},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
 
   return (
     <div className={cn("rounded-lg border bg-background", className)}>

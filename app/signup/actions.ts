@@ -2,11 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { getUserSession } from "@/lib/supabase/auth-helpers";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+/**
+ * 회원가입 Server Action (이메일 기반)
+ *
+ * 유저 플로우:
+ * 1. 이메일/비밀번호 유효성 검증
+ * 2. Supabase Auth: signUp() 호출
+ * 3. 이메일 확인 필요: !data.session
+ * 4. 메타데이터: role: "coach"
+ * 5. 이메일 발송 (Supabase Auth 템플릿)
+ * 6. 이메일 클릭 → /auth/confirm
+ * 7. verifyOtp() → 세션 생성 → /onboarding 리디렉션
+ */
 export async function signupWithEmail(formData: FormData) {
   const supabase = await createClient();
 
@@ -65,11 +78,18 @@ export async function signupWithEmail(formData: FormData) {
   }
 }
 
+/**
+ * 코치 프로필 완료 Server Action
+ *
+ * 유저 플로우:
+ * 1. 인증된 유저 확인
+ * 2. 필수 필드 검증
+ * 3. profiles 테이블 업데이트
+ * 4. onboardingCompleted: true
+ * 5. /dashboard로 리디렉션
+ */
 export async function completeCoachProfile(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getUserSession();
 
   if (!user) {
     return { error: "로그인이 필요합니다." };
@@ -136,22 +156,22 @@ export async function completeCoachProfile(formData: FormData) {
   }
 }
 
+/**
+ * 온보딩 상태 체크 (auth-helpers 사용)
+ *
+ * @deprecated auth-helpers.ts의 checkOnboardingCompleted 함수를 사용하세요
+ */
 export async function checkOnboardingStatus() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getUserSession();
 
   if (!user) {
     return { completed: false, authenticated: false };
   }
 
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  });
+  const isCompleted = await checkOnboardingCompleted(user.id);
 
   return {
-    completed: profile?.onboardingCompleted ?? false,
+    completed: isCompleted,
     authenticated: true,
   };
 }

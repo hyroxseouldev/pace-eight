@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -22,9 +22,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <DashboardHeader
-        breadcrumbs={[{ title: "설정" }]}
-      />
+      <DashboardHeader breadcrumbs={[{ title: "설정" }]} />
       <div className="flex-1 p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           {/* 페이지 타이틀 */}
@@ -48,4 +46,3 @@ export default async function SettingsPage() {
     </>
   );
 }
-

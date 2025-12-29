@@ -1,5 +1,5 @@
 import AccountForm from "./account-form";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function Account() {
@@ -15,4 +15,3 @@ export default async function Account() {
 
   return <AccountForm user={user} />;
 }
-

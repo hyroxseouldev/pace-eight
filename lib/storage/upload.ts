@@ -1,12 +1,12 @@
-import { createClient } from "@/utils/supabase/client";
-import {
-  validateImageFile,
-  generateFileName,
-  buildStoragePath,
-} from "./utils";
+import { createClient } from "@/lib/supabase/client";
+import { validateImageFile, generateFileName, buildStoragePath } from "./utils";
 import { createImageRecord } from "./db";
 import { UploadError } from "./errors";
-import type { UploadOptions, UploadResult, MultipleUploadResult } from "./types";
+import type {
+  UploadOptions,
+  UploadResult,
+  MultipleUploadResult,
+} from "./types";
 
 /**
  * 기본 버킷 이름
@@ -87,8 +87,8 @@ export async function uploadImage(
     // 이미 우리의 커스텀 에러면 그대로 throw
     if (
       error instanceof UploadError ||
-      error instanceof Error &&
-        (error.name === "ValidationError" || error.name === "DatabaseError")
+      (error instanceof Error &&
+        (error.name === "ValidationError" || error.name === "DatabaseError"))
     ) {
       throw error;
     }
@@ -96,7 +96,9 @@ export async function uploadImage(
     // 예상치 못한 에러
     console.error("Unexpected upload error:", error);
     throw new UploadError(
-      `이미지 업로드 중 오류가 발생했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`
+      `이미지 업로드 중 오류가 발생했습니다: ${
+        error instanceof Error ? error.message : "알 수 없는 오류"
+      }`
     );
   }
 }
@@ -132,4 +134,3 @@ export async function uploadMultipleImages(
     }
   });
 }
-

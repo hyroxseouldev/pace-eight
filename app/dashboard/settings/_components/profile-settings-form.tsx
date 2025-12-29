@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { updateProfile } from "../../actions";
+import { handleSignOut } from "@/app/actions/signout";
 
 interface ProfileSettingsFormProps {
   profile: {
@@ -23,6 +24,10 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(profile.avatarUrl);
+  
+  async function onSignOut() {
+    await handleSignOut();
+  }
 
   async function handleSubmit(formData: FormData) {
     setIsUpdating(true);
@@ -138,8 +143,8 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
                 현재 기기에서 로그아웃합니다.
               </p>
             </div>
-            <Button variant="outline" asChild>
-              <a href="/auth/signout">로그아웃</a>
+            <Button variant="outline" onClick={onSignOut}>
+              로그아웃
             </Button>
           </div>
         </CardContent>

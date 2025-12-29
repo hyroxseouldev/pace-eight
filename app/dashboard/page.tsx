@@ -1,32 +1,34 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Package, Users, TrendingUp, Plus, ChevronRight } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
-import { db } from "@/lib/db";
-import { profiles } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  getUserSession,
+  checkOnboardingCompleted,
+} from "@/lib/supabase/auth-helpers";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCoachPrograms, getCoachStats } from "./actions";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Proxy에서 이미 검증된 유저 세션 가져오기
+  const { user } = await getUserSession();
 
   if (!user) {
     redirect("/login");
   }
 
-  // 온보딩 완료 여부 확인
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  });
+  // 온보딩 완료 여부 확인 (auth-helpers 사용)
+  const isCompleted = await checkOnboardingCompleted(user.id);
 
-  if (!profile?.onboardingCompleted) {
+  if (!isCompleted) {
     redirect("/onboarding");
   }
 
@@ -49,8 +51,7 @@ export default async function DashboardPage() {
           </div>
           <Button asChild>
             <Link href="/dashboard/programs/new">
-              <Plus className="mr-2 size-4" />
-              새 프로그램 만들기
+              <Plus className="mr-2 size-4" />새 프로그램 만들기
             </Link>
           </Button>
         </div>
@@ -74,16 +75,12 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                총 구독자
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">총 구독자</CardTitle>
               <Users className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalSubscribers}</div>
-              <p className="text-xs text-muted-foreground">
-                활성 구독자 수
-              </p>
+              <p className="text-xs text-muted-foreground">활성 구독자 수</p>
             </CardContent>
           </Card>
 
