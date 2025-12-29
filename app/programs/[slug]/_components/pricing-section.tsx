@@ -8,6 +8,7 @@ import { SubscribeButton } from "./subscribe-button";
 interface PricingSectionProps {
   program: {
     id: string;
+    slug: string;
     title: string;
     price: number;
     onSale: boolean;
@@ -63,7 +64,14 @@ export function PricingSection({ program }: PricingSectionProps) {
           {/* CTA 버튼 또는 판매 중지 안내 */}
           {program.onSale ? (
             <>
-          <SubscribeButton programId={program.id} className="w-full" size="lg" />
+          <SubscribeButton
+            programId={program.id}
+            programSlug={program.slug}
+            programTitle={program.title}
+            programPrice={program.price}
+            className="w-full"
+            size="lg"
+          />
 
           {/* 이용 안내 */}
           <div className="space-y-2 border-t pt-4 text-xs text-muted-foreground">

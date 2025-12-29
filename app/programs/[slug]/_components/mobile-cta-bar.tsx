@@ -8,6 +8,8 @@ import { SubscribeButton } from "./subscribe-button";
 interface MobileCTABarProps {
   program: {
     id: string;
+    slug: string;
+    title: string;
     price: number;
     onSale: boolean;
   };
@@ -47,7 +49,14 @@ export function MobileCTABar({ program }: MobileCTABarProps) {
             </div>
           </div>
           {program.onSale ? (
-          <SubscribeButton programId={program.id} className="flex-1" />
+          <SubscribeButton
+            programId={program.id}
+            programSlug={program.slug}
+            programTitle={program.title}
+            programPrice={program.price}
+            className="flex-1"
+            size="sm"
+          />
           ) : (
             <Button disabled className="flex-1">
               구독 불가

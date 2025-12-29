@@ -131,6 +131,23 @@ export const workoutSessions = pgTable("workout_sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// [PaymentOrders] 결제 주문 관리 (토스 페이먼트 연동)
+export const paymentOrders = pgTable("payment_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: text("order_id").unique().notNull(), // 토스 페이먼트 주문 ID
+  programId: uuid("program_id")
+    .references(() => programs.id)
+    .notNull(),
+  userId: uuid("user_id")
+    .references(() => profiles.id)
+    .notNull(),
+  paymentKey: text("payment_key").notNull(), // 토스 페이먼트 payment key
+  amount: integer("amount").notNull(), // 결제 금액 (원 단위)
+  status: text("status").notNull(), // ready/completed/failed/canceled
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // [Subscriptions] 구독 및 결제 관리 (포트원 등 연동 시 핵심)
 export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -146,6 +163,13 @@ export const subscriptions = pgTable("subscriptions", {
   billingKey: text("billing_key"), // 정기 결제를 위한 빌링키
   customerUid: text("customer_uid"), // 상점 내 유저 고유 ID
   currentPeriodEnd: timestamp("current_period_end"), // 다음 결제일
+
+  // 결제 정보 추가 (토스 페이먼트 연동)
+  paymentOrderId: uuid("payment_order_id").references(() => paymentOrders.id),
+  paymentMethod: text("payment_method"), // 카드/계좌 등
+  paymentAmount: integer("payment_amount").notNull(), // 실제 결제 금액
+  canceledAt: timestamp("canceled_at"), // 해지일
+  cancelReason: text("cancel_reason"), // 해지 사유
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -243,6 +267,25 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   program: one(programs, {
     fields: [subscriptions.programId],
     references: [programs.id],
+  }),
+  paymentOrder: one(paymentOrders, {
+    fields: [subscriptions.paymentOrderId],
+    references: [paymentOrders.id],
+  }),
+}));
+
+export const paymentOrdersRelations = relations(paymentOrders, ({ one }) => ({
+  user: one(profiles, {
+    fields: [paymentOrders.userId],
+    references: [profiles.id],
+  }),
+  program: one(programs, {
+    fields: [paymentOrders.programId],
+    references: [programs.id],
+  }),
+  subscription: one(subscriptions, {
+    fields: [subscriptions.paymentOrderId],
+    references: [paymentOrders.id],
   }),
 }));
 

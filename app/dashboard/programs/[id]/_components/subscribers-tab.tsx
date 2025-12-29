@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Mail, Calendar } from "lucide-react";
+import { Users, Mail, Calendar, CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +17,8 @@ interface Subscriber {
   id: string;
   status: "active" | "canceled" | "past_due" | "inactive";
   createdAt: Date;
+  paymentAmount: number;
+  paymentMethod: string | null;
   user: {
     id: string;
     email: string;
@@ -34,6 +36,12 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   canceled: { label: "해지됨", variant: "secondary" },
   past_due: { label: "결제 실패", variant: "destructive" },
   inactive: { label: "비활성", variant: "outline" },
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  card: "신용카드",
+  transfer: "계좌이체",
+  free: "무료",
 };
 
 export function SubscribersTab({ subscribers }: SubscribersTabProps) {
@@ -60,6 +68,8 @@ export function SubscribersTab({ subscribers }: SubscribersTabProps) {
           <TableRow>
             <TableHead>회원</TableHead>
             <TableHead>상태</TableHead>
+            <TableHead>결제 금액</TableHead>
+            <TableHead>결제 수단</TableHead>
             <TableHead>구독 시작일</TableHead>
           </TableRow>
         </TableHeader>
@@ -92,6 +102,22 @@ export function SubscribersTab({ subscribers }: SubscribersTabProps) {
                 <Badge variant={statusLabels[subscriber.status]?.variant ?? "outline"}>
                   {statusLabels[subscriber.status]?.label ?? subscriber.status}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="font-medium">
+                  {subscriber.paymentAmount === 0
+                    ? "무료"
+                    : `₩${subscriber.paymentAmount.toLocaleString()}`
+                  }
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <CreditCard className="size-3" />
+                  <span className="text-sm">
+                    {paymentMethodLabels[subscriber.paymentMethod || ""] || subscriber.paymentMethod || "-"}
+                  </span>
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1 text-muted-foreground">
