@@ -71,7 +71,7 @@ export const programs = pgTable("programs", {
   content: text("content"), // 위지윅 에디터로 작성된 상세 콘텐츠 (HTML)
   type: programTypeEnum("type").default("relative").notNull(),
   price: integer("price").notNull(),
-  
+
   // 썸네일 관련
   thumbnailUrl: text("thumbnail_url"), // 기존 URL 입력 또는 업로드된 이미지 URL
   thumbnailImageId: uuid("thumbnail_image_id").references(() => images.id, {
