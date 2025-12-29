@@ -16,7 +16,7 @@ export const LandingButton: React.FC<LandingButtonProps> = ({
 
   const baseStyle = `font-bold border-2 border-black transition-all duration-300 rounded-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${
     sizeStyles[size] || sizeStyles.md
-  }`;
+  } cursor-pointer`;
 
   const variants = {
     primary: "bg-black text-white hover:bg-white hover:text-black",

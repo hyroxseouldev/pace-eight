@@ -5,6 +5,7 @@ import { FadeIn } from "@/components/landing/fade-in";
 import { LandingButton } from "@/components/landing/landing-button";
 import { LandingCard } from "@/components/landing/landing-card";
 import { ArrowDownIcon } from "lucide-react";
+import Link from "next/link";
 
 export default function MarketingPage() {
   const { sections, brand_identity } = LANDING_CONTENT;
@@ -27,9 +28,15 @@ export default function MarketingPage() {
               </div>
             </div>
             <div className="flex items-center">
-              <LandingButton variant="outline" size="sm">
-                Log In
-              </LandingButton>
+              <Link href="/login">
+                <LandingButton
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer"
+                >
+                  로그인
+                </LandingButton>
+              </Link>
             </div>
           </div>
         </nav>
@@ -202,7 +209,7 @@ export default function MarketingPage() {
           <footer className="py-8 border-t-2 border-white bg-black text-white px-6">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center opacity-60">
               <p className="font-mono text-sm">
-                © 2024 PACE EIGHT. All rights reserved.
+                © 2026 PACE EIGHT. All rights reserved.
               </p>
               <p className="font-mono text-sm mt-2 md:mt-0">
                 {brand_identity.core_concept}
